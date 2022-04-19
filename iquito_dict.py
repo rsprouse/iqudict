@@ -385,7 +385,80 @@ def senses2tex(entry, sense_pos, letter):
         tex += '}'
     return tex
 
-def relforms2tex(entry, letter):
+def senses2tex_es(entry, sense_pos, letter):
+    '''Return Spanish language senses in latex format.'''
+    tex = ''
+    senses = entry.findall('sense')
+    for idx, s in enumerate(senses):
+        tex += '  \\sense{'
+        if len(senses) > 1:
+            tex += r'\textbf{' + '{:d}'.format(idx + 1) + '.} '
+        tex += '\n'
+        if sense_pos is True:
+            tex += sense_pos2tex(s, lang="es")
+        try:
+            definitions = s.findall('definition/form[@lang="es"]/text')
+            for definition in definitions:
+                defn =  ''.join(definition.itertext()).strip()
+                tex += '    \\definition{' + defn + '}'
+                add_wc(defn, letter)  # Add wordcounts
+        except (AttributeError, TypeError):
+            pass
+        tex += simplefield2tex(
+            s,
+            'scientificname',
+            'field[@type="scientific-name"]/form[@lang="en"]/text',
+            level=2
+        )
+        # The note entry is now added after the literal meaning.
+        #note = simplefield2tex(
+        #    entry,
+        #    'note',
+        #    'note/form[@lang="en"]/text',
+        #    level=2
+        #)
+        #if note != '' and idx >= 2:
+        #    print(
+        #        'WARNING: entry for {:} (guid {:}) has multiple <senses> and a single <note>'.format(
+        #            get_headword(entry), entry['guid']
+        #        )
+        #    )
+        #tex += note
+        tex += simplefield2tex(
+            s,
+            'anthronote',
+            'note[@type="anthropology"]/form[@lang="es"]/text',
+            level=2, letter=letter
+        )
+        tex += simplefield2tex(
+            s,
+            'semnote',
+            'note[@type="semantics"]/form[@lang="es"]/text',
+            level=2, letter=letter
+        )
+        tex += simplefield2tex(
+            s,
+            'grammarnote',
+            'note[@type="grammar"]/form[@lang="es"]/text',
+            level=2, letter=letter
+        )
+        tex += simplefield2tex(
+            s,
+            'socionote',
+            'note[@type="sociolinguistics"]/form[@lang="es"]/text',
+            level=2, letter=letter
+        )
+        tex += simplefield2tex(
+            s,
+            'discoursenote',
+            'note[@type="discourse"]/form[@lang="es"]/text',
+            level=2, letter=letter
+        )
+        tex += examples2tex(s, lang="es")
+        tex += '}'
+    return tex
+
+def relforms2tex(entry, letter, lang="en"):
     '''Returns related forms in latex format.'''
     tex = ''
     for suffix in ['', '2', '3', '4', '5']:
@@ -393,22 +466,22 @@ def relforms2tex(entry, letter):
         relforms = entry.findall(xpath)
         for idx, rf in enumerate(relforms):
             forms = {}
-            for lang in ('iqu', 'en'):
+            for l in ('iqu', lang):
                 try:
-                    forms[lang] = ''.join(rf.find('form[@lang="' + lang + '"]/text').itertext())
+                    forms[l] = ''.join(rf.find('form[@lang="' + l + '"]/text').itertext())
                 except AttributeError:
-                    forms[lang] = 'MISSING'
+                    forms[l] = 'MISSING'
             tex += '  \\relforms{'
             if len(relforms) > 1:
                 tex += '{:d}. '.format(idx + 1)
 #            tex += '\n'
             tex += '\n    \\relformiqu{' + forms['iqu'] + '}'
-            tex += '\n    \\relformen{' + forms['en'] + '}'
+            tex += '\n    \\relformen{' + forms[lang] + '}'
             tex += '}'
-            add_wc(forms['en'], letter)
+            add_wc(forms[lang], letter)
     return tex
 
-def examples2tex(sense):
+def examples2tex(sense, lang="en"):
     '''Returns examples in latex format.'''
     tex = ''
     examples = sense.findall('example')
@@ -427,7 +500,7 @@ def examples2tex(sense):
             enex = simplefield2tex(
                 ex,
                 'exampleen',
-                'translation[@type="Free translation"]/form[@lang="en"]/text',
+                f'translation[@type="Free translation"]/form[@lang="{lang}"]/text',
                 level=3, missing_ok=False, empty_ok=False
             )
         except AttributeError:
@@ -734,6 +807,190 @@ def reventry2dict_acad(rev, e):
         tex += '\n' + r'\headword{' + rev + '}'
         try:
             tex += '\n' + r'  \pos{' + posmap_en[mypos] + '}'
+        except KeyError:
+            tex += '\n' + r'  \pos{' + mypos + '}'
+        revheadwd = ', '.join(e[mypos])
+        tex += '\n  \gloss{' + revheadwd + '}'
+        tex += '}\n\n'
+    sortword = rev.strip().replace(r'\sci ', '').replace(r'\sp ', '').upper()
+    sortword = sortword \
+        .replace('Á', 'A') \
+        .replace('É', 'E') \
+        .replace('Í', 'I') \
+        .replace('Ó', 'O') \
+        .replace('Ú', 'U') \
+        .replace('Ñ', 'N') \
+        .replace('ñ', 'n') \
+        .replace('-', '') \
+        .replace('=', '') \
+        .replace('“', '') \
+        .replace('”', '') \
+        .replace('"', '') \
+        .replace('`', '') \
+        .replace('¡', '') \
+        .replace('{', '') \
+        .replace('}', '')
+    m = re.search('(?P<firstletter>[^\W\d_])', sortword, re.UNICODE)
+    letter = m.groupdict()['firstletter']
+    add_wc(rev, letter, rev=True)
+    return ({
+        'firstletter': letter,
+        'headword': rev,
+        'sortword': sortword,
+        'tex': tex
+    }, None)
+
+def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
+    '''
+    Return contents of <entry> node as a dict with useful values
+    for Spanish-language academic dictionary.
+    '''
+    headword = get_headword(entry)
+    letter = firstletter(headword).upper()
+    tex = '\n' + r'\entry{' + headword + '}{'
+    tex += '\headword{' + headword + '}'
+    tex += lexeme2tex(entry)
+    try:
+        tex += '\n  \impfrt{\impfrtlab ' + impf_rt_map[entry.attrib['id']] + '}'
+    except KeyError:
+        pass
+    glosses = entry.findall('sense/gloss[@lang="ga"]/text')
+    #irreg_pl = get_irreg_pl(glosses)
+    try:
+        #tex += '\n' + r'  \variants{\irregpllab \vartext{' + irreg_pl_map[headword] + '}}'
+        pass
+    #except KeyError:
+    finally:
+        isvariant = False
+        try:
+            tex += mainwdmap[entry.attrib['id']]
+            isvariant = True
+        except KeyError:
+            pass
+        finally:
+            tex += simplefield2tex(
+                entry, 'irregpl', 'field[@type="Irreg Pl"]/form/text', level=1
+            )
+            tex += simplefield2tex(
+                entry,
+                'irregposs',
+                'field[@type="Irreg Poss"]/form/text',
+                level=1
+            )
+            for irform in ['irregthirdposs', 'irregfirstposs']:
+                try:
+                    variants = ', '.join(
+                        [
+                            v.strip() \
+                            for v in variantmap[entry.attrib['id']][irform]
+                        ]
+                    )
+                    tex += ' \\' + irform + '{' + variants + '}'
+                except KeyError:
+                    pass
+            tex += simplefield2tex(
+                entry, 'derivroot', 'field[@type="Deriv Root"]/form/text', level=1
+            )
+            tex += simplefield2tex(
+                entry, 'litmean', 'field[@type="literal-meaning"]/form[@lang="en"]/text', level=1, letter=letter
+            )
+            tex += simplefield2tex(
+                entry, 'note', 'note/form[@lang="es"]/text', level=1
+            )
+            tex += simplefield2tex(
+                entry, 'pronnote', 'pronunciation/form/text', level=1
+            )
+            if isvariant is False:
+                if get_first_pos(entry) in verb_pos:
+                    tex += senses2tex_es(entry, sense_pos=True, letter=letter)
+                else:
+                    tex += pos2tex(entry, lang="es")
+                    tex += senses2tex_es(entry, sense_pos=False, letter=letter)
+            else:
+                s = entry.find('sense')
+                if s is not None:
+                    tex += simplefield2tex(
+                        s,
+                        'scientificname',
+                        'field[@type="scientific-name"]/form[@lang="en"]/text',
+                        level=2
+                    )
+                    tex += simplefield2tex(
+                        s,
+                        'anthronote',
+                        'note[@type="anthropology"]/form[@lang="es"]/text',
+                        level=2, letter=letter
+                    )
+                    tex += simplefield2tex(
+                        s,
+                        'semnote',
+                        'note[@type="semantics"]/form[@lang="es"]/text',
+                        level=2, letter=letter
+                    )
+                    tex += simplefield2tex(
+                        s,
+                        'grammarnote',
+                        'note[@type="grammar"]/form[@lang="es"]/text',
+                        level=2, letter=letter
+                    )
+                    tex += simplefield2tex(
+                        s,
+                        'socionote',
+                        'note[@type="sociolinguistics"]/form[@lang="es"]/text',
+                        level=2, letter=letter
+                    )
+                    tex += simplefield2tex(
+                        s,
+                        'discoursenote',
+                        'note[@type="discourse"]/form[@lang="es"]/text',
+                        level=2, letter=letter
+                    )
+                    #tex += examples2tex(s)
+            tex += simplefield2tex(
+                entry,
+                'activemiddle',
+                'field[@type="activemiddle"]/form/text',
+                level=1
+            )
+            tex += relforms2tex(entry, letter, lang="es")
+            try:
+                for vartype in variantmap[entry.attrib['id']]:
+                    if vartype in ['irregthirdposs', 'irregfirstposs', 'irregpllab']:
+                        continue
+                    variants = [
+                        v.strip() \
+                        for v in variantmap[entry.attrib['id']][vartype] #\
+                        #if v.strip() not in irreg_pl
+                    ]
+                    if len(variants) > 0:
+                        if len(variants) > 1 and vartype in ['freevarlab', 'dialectvarlab']:
+                            vartype += 's'
+                        tex += '\n' + r'  \variants{' + '\\' + vartype + r' \vartext{' + ', '.join([v for v in variants]) + '}}'
+            except KeyError:
+                pass
+    tex += '}'
+    try:
+        return ({
+            'firstletter': letter,
+            'headword': headword,
+            'sortword': str2sort(headword),
+            'tex': tex
+        }, None)
+    except Exception as e:
+        return ({'firstletter': '', 'headword': '', 'sortword': '', 'tex': ''}, e)
+
+def reventry2dict_acad_es(rev, e):
+    '''
+    Return reversals of rev for Spanish-language academic dictionary.
+    '''
+    tex = ''
+    parts_of_speech = list(e.keys())
+    parts_of_speech.sort()
+    for mypos in parts_of_speech:
+        tex += '\n' + r'\reventry{' + rev + '}{'
+        tex += '\n' + r'\headword{' + rev + '}'
+        try:
+            tex += '\n' + r'  \pos{' + posmap_es[mypos] + '}'
         except KeyError:
             tex += '\n' + r'  \pos{' + mypos + '}'
         revheadwd = ', '.join(e[mypos])
