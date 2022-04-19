@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# VIM
+*~
+*.*~
+*.swp
+
+# FLEx and tex directories
+flex_export/
+tex/
