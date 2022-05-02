@@ -104,13 +104,17 @@ def str2alpha(s):
     s = s.replace('=', '').replace('-', '').replace('#', '')
 
     # Replace diacritic digraphs (i.e. vowel+diacritic combinations) with precomposed characters.
-    # (ɨ́ doesn't have a precomposed form.)
+    # (ɨ́ and ɨ̀ don't have precomposed forms.)
     s = s.replace('á', 'á').replace('é', 'é').replace('í', 'í') \
-         .replace('ó', 'ó').replace('ú', 'ú')
+         .replace('ó', 'ó').replace('ú', 'ú') \
+         .replace('à', 'à').replace('è', 'è').replace('ì', 'ì') \
+         .replace('ò', 'ò').replace('ù', 'ù')
 
     # Ignore diacritics by replacing with unmodified character.
     s = s.replace('á', 'a').replace('é', 'e').replace('í', 'i') \
-         .replace('ɨ́', 'ɨ').replace('ó', 'o').replace('ú', 'u')
+         .replace('ɨ́', 'ɨ').replace('ó', 'o').replace('ú', 'u') \
+         .replace('à', 'a').replace('è', 'e').replace('ì', 'i') \
+         .replace('ɨ̀', 'ɨ').replace('ò', 'o').replace('ù', 'u')
 
     # Replace long vowel sequences with single upper case.
     s = s.replace('aa', 'A').replace('ee', 'E').replace('ii', 'I') \
@@ -118,10 +122,6 @@ def str2alpha(s):
 
     # Clean up bad character data.
     s = cleanstr(s)
-
-    # ɨ́ doesn't have a precomposed form, and we use the capital as a placeholder for
-    # the vowel+diacritic combination.
-#    s = s.replace('ɨ́', 'Ɨ')
 
     return s
 
@@ -131,7 +131,6 @@ def str2sort(s):
     # Map characters to ordered codepoints.
     s = str2alpha(s)
     sortnum = [amap[c] for c in s]
-#    print(s, sortnum, (bytes(sortnum).decode('ascii')).encode('ascii'))
 
     # Return as an ascii string.
 # TODO: can this be simplified?
