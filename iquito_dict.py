@@ -41,6 +41,21 @@ posmap_es = {
     'copular verb': 'verbo copular',
     'relative pronoun': 'pronombre relativo',
     'particle': 'partícula',
+    # TODO: translate the following parts of speech
+    'clause': 'TODO',
+    'complementizer': 'TODO',
+    'possessive pronoun': 'TODO',
+    'manner adverb': 'TODO',
+    'demonstrative pronoun': 'TODO',
+    'locative demonstrative': 'TODO',
+    'mensural demonstrative': 'TODO',
+    'anaphoric locative demonstrative': 'TODO',
+    'temporal sequencing adverb': 'TODO',
+    'modal adverb': 'TODO',
+    'temporal adverb': 'TODO',
+    'locative adverb': 'TODO',
+    'degree adverb': 'TODO',
+    'discourse anaphor': 'TODO',
 }
 
 posmap_en = {
@@ -93,19 +108,19 @@ order_varlab_acad_es = [
     'playvarlab',
     'nicknamelab',
     'quantvarlab',
-    'sociovarlab ',
+    'sociovarlab',
     'freevarlabs',
     'freevarlab',
     'dialectvarlab',
     'dialectvarlabs',
-    'dialectlabNanay',
-    'dialectlabChambira',
-    'dialectlabMaasikuuri',
-    'dialectlabInkawiiraana',
-    'dialectlabMajanakaani',
-    'persvarlabJPI',
-    'persvarlabELY',
-    'persvarlabHDC',
+    'dialectlab{Nanay}',
+    'dialectlab{Chambira}',
+    'dialectlab{Maasikuuri}',
+    'dialectlab{Inkawɨɨ́raana}',
+    'dialectlab{Majanakáani}',
+    'persvarlab{JPI}',
+    'persvarlab{ELY}',
+    'persvarlab{HDC}',
     'persvarlabunk'
 ]
 
@@ -191,6 +206,15 @@ def nodetext(node):
     '''Return all text found in node as a string.'''
     return cleantex(''.join(list(node.itertext())))
 
+def superscriptLH(s):
+    '''Replace L/H with tex superscript form.'''
+    return s.replace('L', '\\textsuperscript{L}') \
+            .replace('H', '\\textsuperscript{H}')
+
+def activemiddle_replace_es(s):
+    '''Translate activemiddle field to Spanish.'''
+    return s.replace('active', 'activo').replace('middle', 'medio')
+
 def get_headword(entry):
     '''Return an entry's headword. Throw an error if entry's headword fields are missing
     or empty.'''
@@ -245,15 +269,17 @@ def is_suffix(entry):
     '''Return True if entry type is suffix.'''
     return entry.find('trait[@name="morph-type"][@value="suffix"]') is not None
 
-def lexeme2tex(entry):
+def lexeme2tex(entry, do_superscriptLH=False):
     '''Return the formatted Lexeme Form if the Lexeme Form is not also the
     headword (i.e. if the Citation Form exists and is used as the headword.'''
     tex = ''
     if entry.find('citation/form[@lang="iqu"]/text') is not None:
         try:
             tex = simplefield2tex(
-                entry, 'lexeme', 'lexical-unit/form[@lang="iqu"]/text', level=1
+                entry, 'lexeme', 'lexical-unit/form[@lang="iqu"]/text', level=1,
+                do_superscriptLH=do_superscriptLH
             )
+
         except:
             pass
     return tex
@@ -540,7 +566,8 @@ def relforms2tex_es(entry, letter):
             if len(relforms) > 1:
                 tex += '{:d}. '.format(idx + 1)
             tex += '\n    \\relformiqu{' + forms['iqu'] + '}'
-            tex += '\n    \\relformiqurt{' + forms['root'] + '}'
+            if forms['root'] != 'MISSING':
+                tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
             tex += '\n    \\relformpos{' + forms['POS'] + '}'
             tex += '\n    \\relformeu{' + forms['eu'] + '}'
             tex += '}'
@@ -576,13 +603,17 @@ def examples2tex(sense, lang="en"):
     return tex
 
 
-def simplefield2tex(node, texfld, xpath, level=1, missing_ok=True, empty_ok=True, letter=None):
+def simplefield2tex(node, texfld, xpath, level=1, missing_ok=True, empty_ok=True, letter=None, do_superscriptLH=False, activemiddle_es=False):
     '''Return a simple field from a node as a latex command.'''
     tex = ''
     val = None
     try:
         val = nodetext(node.find(xpath))
         assert(val is not None)
+        if do_superscriptLH:
+            val = superscriptLH(val)
+        if activemiddle_es:
+            val = activemiddle_replace_es(val)
         tex += '  ' * level + '\\' + texfld + '{' + val.strip() + '}'
         if texfld in ('litmean', 'anthronote', 'grammarnote', 'semnote', 'socionote', 'discoursenote'):
             add_wc(val.strip(), letter)
@@ -913,6 +944,7 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
     '''
     headword = get_headword(entry)
     letter = firstletter(headword).upper()
+    headword = superscriptLH(headword)
     tex = '\n' + r'\entry{' + headword + '}{'
     tex += '\headword{' + headword + '}'
 #!# Commented out for new ordering
@@ -936,10 +968,14 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
             pass
         finally:
             if isvariant is False:
-                if get_first_pos(entry) in verb_pos:
+                first_pos = get_first_pos(entry)
+                if get_first_pos(entry) == 'derivational verb root':
+                    # Suppress these
+                    return ({}, 'pass')
+                elif first_pos in verb_pos:
                     tex += senses2tex_es(entry, sense_pos=True, letter=letter)
                 else:
-                    tex += pos2tex(entry, lang="eu")
+                    tex += pos2tex(entry, lang="es")
                     tex += senses2tex_es(entry, sense_pos=False, letter=letter)
             else:
                 s = entry.find('sense')
@@ -987,13 +1023,14 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
                         level=2, letter=letter
                     )
                     tex += examples2tex(s)
+            tex += ' ~$\\parallel$~ '
             #!# New additions
             #tex += simplefield2tex(
             #    entry, 'pronnote', 'pronunciation/form/text', level=1
             #)
             efields = [
                 ('litmean', 'literal-meaning', 'eu'),
-                ('note', 'note/form[@lang="es"]/text', ''),
+                ('note', 'note/form[@lang="eu"]/text', ''),
                 ('anthnoteentry', 'Entry Anthro', 'eu'),
                 ('semnoteentry', 'Entry Semantics', 'eu'),
                 ('gramnoteentry', 'Entry Grammar', 'eu'),
@@ -1010,7 +1047,7 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
             ]
             for tfield, ident, lg in efields:
                 if tfield == 'lexeme':
-                    tex += lexeme2tex(entry)
+                    tex += lexeme2tex(entry, do_superscriptLH=True)
                     continue
                 elif tfield in ('irregfirstposs', 'irregthirdposs'):
                     try:
@@ -1026,7 +1063,8 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
                 else:
                     lgattr = '' if lg == '' else f'[@lang="{lg}"]'
                     xpath = ident if '/' in ident else f'field[@type="{ident}"]/form{lgattr}/text'
-                    tex += simplefield2tex(entry, tfield, xpath, level=1)
+                    ssLH = True if tfield in ('derivroot', 'altpronunc') else False
+                    tex += simplefield2tex(entry, tfield, xpath, level=1, do_superscriptLH=ssLH)
             #!# End new additions
             for vartype in order_varlab_acad_es:
                 try:
@@ -1044,7 +1082,8 @@ def entry2dict_acad_es(entry, variantmap, mainwdmap, irreg_pl_map, impf_rt_map):
                 entry,
                 'activemiddle',
                 'field[@type="activemiddle"]/form/text',
-                level=1
+                level=1,
+                activemiddle_es=True
             )
             tex += relforms2tex_es(entry, letter)
     tex += '}'
@@ -1071,7 +1110,7 @@ def reventry2dict_acad_es(rev, e):
         try:
             tex += '\n' + r'  \pos{' + posmap_es[mypos] + '}'
         except KeyError:
-            tex += '\n' + r'  \pos{' + mypos + '}'
+            tex += '\n' + r'  \pos{' + mypos + ' (TODO: FIELD NOT MAPPED)}'
         revheadwd = ', '.join(e[mypos])
         tex += '\n  \gloss{' + revheadwd + '}'
         tex += '}\n\n'
