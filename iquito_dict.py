@@ -113,14 +113,14 @@ order_varlab_acad_es = [
     'freevarlab',
     'dialectvarlab',
     'dialectvarlabs',
-    'dialectlab{Nanay}',
-    'dialectlab{Chambira}',
-    'dialectlab{Maasikuuri}',
-    'dialectlab{Inkawɨɨ́raana}',
-    'dialectlab{Majanakáani}',
-    'persvarlab{JPI}',
-    'persvarlab{ELY}',
-    'persvarlab{HDC}',
+    'dialectlabNanay',
+    'dialectlabChambira',
+    'dialectlabMaasikuuri',
+    'dialectlabInkawɨɨ́raana',
+    'dialectlabMajanakáani',
+    'persvarlabJPI',
+    'persvarlabELY',
+    'persvarlabHDC',
     'persvarlabunk'
 ]
 
