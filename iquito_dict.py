@@ -14,48 +14,47 @@ glossmap = {
 }
 
 posmap_es = {
-    'noun': 'sustantivo',
-    'intransitive verb': 'verbo intransitivo',
-    'transitive verb': 'verbo transitivo',
-    'locative noun': 'sustantivo locativo',
-    'postposition': 'posposición',
-    'adverb': 'adverbio',
-    'adjective': 'adjetivo',
-    'interjection': 'interjección',
-    'ambitransitive verb': 'verbo ambitransitivo',
-    'proper noun': 'sustantivo propio',
-    'ditransitive verb': 'verbo ditransitivo',
-    'pronoun': 'pronombre',
-    'existential verb': 'verbo existencial',
-    'conjunction': 'conjunción',
-    'locative postposition': 'posposición locativa',
-    'determiner': 'determinante',
-    'demonstrative': 'demostrativo',
-    'infinitive verb': 'verbo infinitivo',
-    'interrogative': 'interrogativo',
-    'negation': 'negación',
-    'grammatical clitic': 'clítico gramatical',
-    'number': 'número',
-    'adverbial clitic': 'clítico adverbial',
-    'indefinite pronoun': 'pronombre indefinido',
-    'copular verb': 'verbo copular',
-    'relative pronoun': 'pronombre relativo',
-    'particle': 'partícula',
-    # TODO: translate the following parts of speech
-    'clause': 'TODO',
-    'complementizer': 'TODO',
-    'possessive pronoun': 'TODO',
-    'manner adverb': 'TODO',
-    'demonstrative pronoun': 'TODO',
-    'locative demonstrative': 'TODO',
-    'mensural demonstrative': 'TODO',
-    'anaphoric locative demonstrative': 'TODO',
-    'temporal sequencing adverb': 'TODO',
-    'modal adverb': 'TODO',
-    'temporal adverb': 'TODO',
-    'locative adverb': 'TODO',
-    'degree adverb': 'TODO',
-    'discourse anaphor': 'TODO',
+    'noun': 'sus.',
+    'intransitive verb': 'v.i.',
+    'transitive verb': 'v.t.',
+    'locative noun': 'n.loc.',
+    'postposition': 'posp.',
+    'adverb': 'adv.',
+    'adjective': 'adj.',
+    'interjection': 'interj.',
+    'ambitransitive verb': 'v.a.',
+    'proper noun': 'n.prop.',
+    'ditransitive verb': 'v.d.',
+    'pronoun': 'pron.',
+    'existential verb': 'v.e.',
+    'conjunction': 'conj.',
+    'locative postposition': 'posp.loc.',
+    'determiner': 'det.',
+    'demonstrative': 'dem.',
+    'infinitive verb': 'v.inf.',
+    'interrogative': 'interrog.',
+    'negation': 'neg.',
+    'grammatical clitic': 'clt.gram.',
+    'number': 'num.',
+    'adverbial clitic': 'clt.adv.',
+    'indefinite pronoun': 'pron.indef.',
+    'copular verb': 'v.c.',
+    'relative pronoun': 'pron.rel.',
+    'particle': 'prtcl',
+    'clause': 'cláus.',
+    'complementizer': 'compl.',
+    'possessive pronoun': 'pron.pos.',
+    'manner adverb': 'adv.man.',
+    'demonstrative pronoun': 'pron.dem.',
+    'locative demonstrative': 'dem.loc.',
+    'mensural demonstrative': 'dem.mens,',
+    'anaphoric locative demonstrative': 'dem.loc.anaf.',
+    'temporal sequencing adverb': 'adv.sec.temp.',
+    'modal adverb': 'adv.mod.',
+    'temporal adverb': 'adv.temp.',
+    'locative adverb': 'adv.loc.',
+    'degree adverb': 'adv.grad',
+    'discourse anaphor': 'anaf.disc.',
 }
 
 posmap_en = {
@@ -141,6 +140,14 @@ def str2alpha(s):
     # Canonicalize to lower case.
     s = s.strip().lower()
     
+    # Remove tex commands.
+    s = re.sub(r'\\\w+{([^}]+)}', r'\1', s)
+
+    # Remove punctuation.
+    s = s.replace('"', '') \
+         .replace('“', '').replace('”', '') \
+         .replace('¿', '').replace('?', '')
+
     # Morpheme markers do not affect sorting. Remove them.
     s = s.replace('=', '').replace('-', '').replace('#', '')
 
@@ -567,9 +574,9 @@ def relforms2tex_es(entry, letter):
                 tex += '{:d}. '.format(idx + 1)
             tex += '\n    \\relformiqu{' + forms['iqu'] + '}'
             if forms['root'] != 'MISSING':
-                tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
-            tex += '\n    \\relformpos{' + forms['POS'] + '}'
+                tex += '\n    \\relformpos{' + forms['POS'] + '}'
             tex += '\n    \\relformeu{' + forms['eu'] + '}'
+            tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
             tex += '}'
             add_wc(forms['eu'], letter)
     return tex
@@ -1114,7 +1121,10 @@ def reventry2dict_acad_es(rev, e):
         revheadwd = ', '.join(e[mypos])
         tex += '\n  \gloss{' + revheadwd + '}'
         tex += '}\n\n'
-    sortword = rev.strip().replace(r'\sci ', '').replace(r'\sp ', '').upper()
+
+    # Remove tex commands.
+    sortword = re.sub(r'\\\w+{([^}]+)}', r'\1', rev.strip()).upper()
+
     sortword = sortword \
         .replace('Á', 'A') \
         .replace('É', 'E') \
@@ -1125,6 +1135,8 @@ def reventry2dict_acad_es(rev, e):
         .replace('ñ', 'n') \
         .replace('-', '') \
         .replace('=', '') \
+        .replace('¿', '') \
+        .replace('?', '') \
         .replace('“', '') \
         .replace('”', '') \
         .replace('"', '') \
