@@ -17,7 +17,7 @@ posmap_es = {
     'noun': 'sus.',
     'intransitive verb': 'v.i.',
     'transitive verb': 'v.t.',
-    'locative noun': 'n.loc.',
+    'locative noun': 'sus.loc.',
     'postposition': 'posp.',
     'adverb': 'adv.',
     'adjective': 'adj.',
