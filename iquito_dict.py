@@ -573,8 +573,7 @@ def relforms2tex_es(entry, letter):
             if len(relforms) > 1:
                 tex += '{:d}. '.format(idx + 1)
             tex += '\n    \\relformiqu{' + forms['iqu'] + '}'
-            if forms['root'] != 'MISSING':
-                tex += '\n    \\relformpos{' + forms['POS'] + '}'
+            tex += '\n    \\relformpos{' + forms['POS'] + '}'
             tex += '\n    \\relformeu{' + forms['eu'] + '}'
             tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
             tex += '}'
