@@ -575,7 +575,8 @@ def relforms2tex_es(entry, letter):
             tex += '\n    \\relformiqu{' + forms['iqu'] + '}'
             tex += '\n    \\relformpos{' + forms['POS'] + '}'
             tex += '\n    \\relformeu{' + forms['eu'] + '}'
-            tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
+            if forms['root'] != 'MISSING':
+                tex += '\n    \\relformiqurt{' + superscriptLH(forms['root']) + '}'
             tex += '}'
             add_wc(forms['eu'], letter)
     return tex
